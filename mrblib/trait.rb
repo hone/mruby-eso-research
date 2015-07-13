@@ -1,6 +1,7 @@
 module ESOResearch
   class Trait
-    attr_reader :name, :researched, :item, :piece
+    attr_reader :name, :piece
+    attr_accessor :researched, :item
 
     def initialize(name, researched, item, piece)
       @name       = name

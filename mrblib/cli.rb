@@ -38,7 +38,17 @@ module ESOResearch
 
       piece = type.pieces.dup.keep_if {|piece| piece.name.include?(@opts["p"]) || piece.description.include?(@opts["p"]) }.first
 
-      piece.traits << Trait.new(@opts["t"], @opts["r"], @opts["i"], piece)
+      if @opts["r"] == "true"
+        piece.traits.each do |trait|
+          if trait.name.include?(@opts["t"])
+            trait.researched = true
+            trait.item = nil
+            break
+          end
+        end
+      else
+        piece.traits << Trait.new(@opts["t"], @opts["r"], @opts["i"], piece)
+      end
 
       File.open(DATA_FILE, 'w') do |file|
         file.print(YAML.dump(@crafts.map {|craft| craft.to_yml_struct }))
