@@ -19,6 +19,10 @@ module ESOResearch
       }
     end
 
+    def create_trait(name, researched, item)
+      traits << @trait_klass.new(name, researched, item, self)
+    end
+
     private
     def build_traits(traits)
       if traits

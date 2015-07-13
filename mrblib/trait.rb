@@ -4,7 +4,7 @@ module ESOResearch
     attr_accessor :researched, :item
 
     def initialize(name, researched, item, piece)
-      @name       = name
+      @name       = find_name(name)
       @researched = researched
       @item       = item
       @piece      = piece
@@ -38,23 +38,34 @@ STRING
         yml
       end
     end
+
+    private
+    def predefined_traits
+      raise NotImplementedError
+    end
+
+    def find_name(name)
+      predefined_traits.each do |trait_name|
+        return trait_name if trait_name.include?(name)
+      end
+
+      raise UnknownTrait, "For #{piece.name}, #{name} is not a known trait for #{self.class}." unless predefined_traits.include?(name)
+    end
   end
 
   class ApparrelTrait < Trait
     TRAITS = %w(sturdy impenetrable reinforced well-fitted training infused exploration divines nirnhoned)
 
-    def initialize(name, researched, item, piece)
-      raise UnknownTrait, "For #{piece.name}, #{name} is not a known trait for #{self.class}." unless TRAITS.include?(name)
-      super
+    def predefined_traits
+      TRAITS
     end
   end
 
   class WeaponTrait < Trait
     TRAITS = %w(powered charged precise infused defending training sharpened weighted nirnhoned)
 
-    def initialize(name, researched, item, piece)
-      raise UnknownTrait, "For #{piece.name}, #{name} is not a known trait for #{self.class}." unless TRAITS.include?(name)
-      super
+    def predefined_traits
+      TRAITS
     end
   end
 end

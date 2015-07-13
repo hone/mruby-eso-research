@@ -47,7 +47,7 @@ module ESOResearch
           end
         end
       else
-        piece.traits << Trait.new(@opts["t"], @opts["r"], @opts["i"], piece)
+        piece.create_trait(@opts["t"], @opts["r"], @opts["i"])
       end
 
       File.open(DATA_FILE, 'w') do |file|
