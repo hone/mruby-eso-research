@@ -4,8 +4,9 @@ class Piece
   def initialize(hash, type)
     @name        = hash.keys.first["name"]
     @description = hash.keys.first["description"]
-    @traits      = build_traits(hash.values.first)
     @type        = type
+    @trait_klass = type.name == "weapon" ? WeaponTrait : ApparrelTrait
+    @traits      = build_traits(hash.values.first)
   end
 
   def to_yml_struct
@@ -21,7 +22,7 @@ class Piece
   def build_traits(traits)
     if traits
       traits.map do |trait|
-        Trait.new(
+        @trait_klass.new(
           trait["name"],
           trait["researched"],
           trait["item"],

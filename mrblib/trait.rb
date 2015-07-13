@@ -1,6 +1,13 @@
-Trait = Struct.new(:name, :researched, :item, :piece)
-
 class Trait
+  attr_reader :name, :researched, :item, :piece
+
+  def initialize(name, researched, item, piece)
+    @name       = name
+    @researched = researched
+    @item       = item
+    @piece      = piece
+  end
+
   def to_s
     string = <<STRING
 craft: #{piece.type.craft.name}
@@ -28,5 +35,23 @@ STRING
     else
       yml
     end
+  end
+end
+
+class ApparrelTrait < Trait
+  TRAITS = %w(sturdy impenetrable reinforced well-fitted training infused exploration divines nirnhoned)
+
+  def initialize(name, researched, item, piece)
+    raise UnknownTrait, "For #{piece.name}, #{name} is not a known trait for #{self.class}." unless TRAITS.include?(name)
+    super
+  end
+end
+
+class WeaponTrait < Trait
+  TRAITS = %w(powered charged precise infused defending training sharpened weighted nirnhoned)
+
+  def initialize(name, researched, item, piece)
+    raise UnknownTrait, "For #{piece.name}, #{name} is not a known trait for #{self.class}." unless TRAITS.include?(name)
+    super
   end
 end

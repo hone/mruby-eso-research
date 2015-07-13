@@ -10,7 +10,18 @@ class ESOResearch
 
   def run
     if @opts["write"]
-      print(YAML.dump(@crafts.map {|craft| craft.to_yml_struct }))
+      craft = @crafts.dup.keep_if {|craft| craft.name.include?(@opts["c"]) }.first
+
+      type = craft.types.dup.keep_if {|type| type.name.include?(@opts["y"]) }.first
+
+      piece = type.pieces.dup.keep_if {|piece| piece.name.include?(@opts["p"]) || piece.description.include?(@opts["p"]) }.first
+
+      piece.traits << Trait.new(@opts["t"], @opts["r"], @opts["i"], piece)
+
+      File.open(DATA_FILE, 'w') do |file|
+        file.print(YAML.dump(@crafts.map {|craft| craft.to_yml_struct }))
+      end
+
       return
     end
 
