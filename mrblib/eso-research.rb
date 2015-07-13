@@ -5,78 +5,57 @@ class ESOResearch
     class << argv; include Getopts; end
 
     @opts   = argv.getopts(short_opts, long_opts)
-    @data   = load_yml
-    @traits = setup_data_structure
+    @crafts = build_crafts
   end
 
   def run
-    matched_traits = @traits.map do |trait|
-      next if skip_trait(trait, "n", :name)
-      next if skip_trait(trait, "i", :item)
-      next if skip_trait(trait, "c", :craft)
-      next if skip_trait(trait, "t", :type)
+    if @opts["write"]
+      print(YAML.dump(@crafts.map {|craft| craft.to_yml_struct }))
+      return
+    end
 
-      next if (researched = @opts["r"]) && trait.researched.to_s != researched
-      next if (piece = @opts["p"]) && !(trait.piece["name"].include?(piece) || trait.piece["description"].include?(piece))
+    matched_traits = []
+    @crafts.each do |craft|
+      next if (arg = @opts["c"]) && !craft.name.include?(arg)
 
-      trait.to_s
-    end.compact.join("---\n")
+      craft.types.each do |type|
+        next if (arg = @opts["y"]) && !type.name.include?(arg)
 
-    puts matched_traits
+        type.pieces.each do |piece|
+          next if (arg = @opts["p"]) && !(piece.name.include?(arg) || piece.description.include?(arg))
+
+          piece.traits.each do |trait|
+            next if (arg = @opts["t"]) && !trait.name.include?(arg)
+            next if (arg = @opts["r"]) && trait.researched.to_s != researched
+            next if (arg = @opts["i"]) && (!trait.item || !trait.item.include?(arg))
+
+            matched_traits << trait
+          end
+        end
+      end
+    end
+
+    puts matched_traits.map {|trait| trait.to_s }.join("\n")
   end
 
   private
   def short_opts
-    "i:c:p:t:r:n:"
+    "c:y:p:t:r:i:"
   end
   
   def long_opts
-    "help"
+    "write"
   end
 
   def load_yml
     YAML.load(File.read(DATA_FILE)) if File.exist?(DATA_FILE)
   end
 
-  def setup_data_structure
-    results = []
+  def build_crafts
+    data = load_yml
+    return [] unless data
 
-    @data.each do |craft_h|
-      craft_h.each do |craft, types|
-        types.each do |type_h|
-          type_h.each do |type, pieces|
-            pieces.each do |piece_h|
-              piece_h.each do |piece, traits|
-                if traits
-                  traits.each do |trait|
-                    results << Trait.new(
-                      trait["name"],
-                      trait["researched"],
-                      trait["item"],
-                      craft,
-                      type,
-                      piece
-                    )
-                  end
-                end
-              end
-            end
-          end
-        end
-      end
-    end
-
-    results
-  end
-
-  def skip_trait(trait, opt, attribute)
-    if arg = @opts[opt]
-      unless trait.send(attribute) && trait.send(attribute).include?(arg)
-        return true
-      end
-    end
-    
-    false
+    data.map {|craft_h| Craft.new(craft_h) }
   end
 end
 

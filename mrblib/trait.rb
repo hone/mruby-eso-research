@@ -1,12 +1,12 @@
-Trait = Struct.new(:name, :researched, :item, :craft, :type, :piece)
+Trait = Struct.new(:name, :researched, :item, :piece)
 
 class Trait
   def to_s
     string = <<STRING
-craft: #{craft}
-type: #{type}
-piece: #{piece["name"]} (#{piece["description"]})
-name: #{name}
+craft: #{piece.type.craft.name}
+type: #{piece.type.name}
+piece: #{piece.name} (#{piece.description})
+trait: #{name}
 researched: #{researched}
 STRING
 
@@ -14,6 +14,19 @@ STRING
       "#{string}item: #{item}\n"
     else
       string
+    end
+  end
+
+  def to_yml_struct
+    yml = {
+      'name'       => name,
+      'researched' => researched
+    }
+
+    if item
+      yml.merge('item' => item)
+    else
+      yml
     end
   end
 end
