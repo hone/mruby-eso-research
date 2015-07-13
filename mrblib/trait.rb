@@ -53,7 +53,7 @@ STRING
     end
   end
 
-  class ApparrelTrait < Trait
+  class ApparelTrait < Trait
     TRAITS = %w(sturdy impenetrable reinforced well-fitted training infused exploration divines nirnhoned)
 
     def predefined_traits

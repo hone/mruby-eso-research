@@ -6,7 +6,7 @@ module ESOResearch
       @name        = hash.keys.first["name"]
       @description = hash.keys.first["description"]
       @type        = type
-      @trait_klass = type.name == "weapon" ? WeaponTrait : ApparrelTrait
+      @trait_klass = type.name == "weapon" ? WeaponTrait : ApparelTrait
       @traits      = build_traits(hash.values.first)
     end
 
