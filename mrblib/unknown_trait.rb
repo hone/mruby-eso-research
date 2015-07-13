@@ -1,1 +1,3 @@
-class UnknownTrait < Exception; end
+module ESOResearch
+  class UnknownTrait < Exception; end
+end
