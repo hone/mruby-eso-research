@@ -1,31 +1,52 @@
 class ESOResearch
-  DATA_FILE = "research.yml"
+  DATA_FILE  = "research.yml"
+  SHORT_OPTS = "c:y:p:t:r:i:"
+  LONG_OPTS  = "commit"
 
   def initialize(argv)
     class << argv; include Getopts; end
 
-    @opts   = argv.getopts(short_opts, long_opts)
+    @opts   = argv.getopts(SHORT_OPTS, LONG_OPTS)
     @crafts = build_crafts
   end
 
   def run
-    if @opts["write"]
-      craft = @crafts.dup.keep_if {|craft| craft.name.include?(@opts["c"]) }.first
-
-      type = craft.types.dup.keep_if {|type| type.name.include?(@opts["y"]) }.first
-
-      piece = type.pieces.dup.keep_if {|piece| piece.name.include?(@opts["p"]) || piece.description.include?(@opts["p"]) }.first
-
-      piece.traits << Trait.new(@opts["t"], @opts["r"], @opts["i"], piece)
-
-      File.open(DATA_FILE, 'w') do |file|
-        file.print(YAML.dump(@crafts.map {|craft| craft.to_yml_struct }))
-      end
-
-      return
+    if @opts["commit"]
+      commit
+    else
+      search
     end
+  end
 
+  private
+  def load_yml
+    YAML.load(File.read(DATA_FILE)) if File.exist?(DATA_FILE)
+  end
+
+  def build_crafts
+    data = load_yml
+    return [] unless data
+
+    data.map {|craft_h| Craft.new(craft_h) }
+  end
+
+  def commit
+    craft = @crafts.dup.keep_if {|craft| craft.name.include?(@opts["c"]) }.first
+
+    type = craft.types.dup.keep_if {|type| type.name.include?(@opts["y"]) }.first
+
+    piece = type.pieces.dup.keep_if {|piece| piece.name.include?(@opts["p"]) || piece.description.include?(@opts["p"]) }.first
+
+    piece.traits << Trait.new(@opts["t"], @opts["r"], @opts["i"], piece)
+
+    File.open(DATA_FILE, 'w') do |file|
+      file.print(YAML.dump(@crafts.map {|craft| craft.to_yml_struct }))
+    end
+  end
+
+  def search
     matched_traits = []
+
     @crafts.each do |craft|
       next if (arg = @opts["c"]) && !craft.name.include?(arg)
 
@@ -47,26 +68,6 @@ class ESOResearch
     end
 
     puts matched_traits.map {|trait| trait.to_s }.join("\n")
-  end
-
-  private
-  def short_opts
-    "c:y:p:t:r:i:"
-  end
-  
-  def long_opts
-    "write"
-  end
-
-  def load_yml
-    YAML.load(File.read(DATA_FILE)) if File.exist?(DATA_FILE)
-  end
-
-  def build_crafts
-    data = load_yml
-    return [] unless data
-
-    data.map {|craft_h| Craft.new(craft_h) }
   end
 end
 
