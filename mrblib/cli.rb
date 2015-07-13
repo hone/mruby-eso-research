@@ -59,7 +59,7 @@ module ESOResearch
 
             piece.traits.each do |trait|
               next if (arg = @opts["t"]) && !trait.name.include?(arg)
-              next if (arg = @opts["r"]) && trait.researched.to_s != researched
+              next if (arg = @opts["r"]) && trait.researched.to_s != arg
               next if (arg = @opts["i"]) && (!trait.item || !trait.item.include?(arg))
 
               matched_traits << trait
