@@ -20,7 +20,10 @@ module ESOResearch
     end
 
     def create_trait(name, researched, item)
-      traits << @trait_klass.new(name, researched, item, self)
+      trait = @trait_klass.new(name, researched, item, self)
+      traits << trait
+
+      trait
     end
 
     private
