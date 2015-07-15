@@ -7,7 +7,7 @@ module ESOResearch
     end
 
     def commit(opts)
-      if opts.keys & REQUIRED_OPTS != REQUIRED_OPTS
+      if (opts.keys & REQUIRED_OPTS).size != REQUIRED_OPTS.size
         raise MissingOptions, "These are the required opts for `--commit`: -#{REQUIRED_OPTS.join(" -")}"
       end
 
