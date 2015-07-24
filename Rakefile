@@ -1,5 +1,5 @@
 APP_ROOT=ENV["APP_ROOT"] || Dir.pwd
-APP_NAME=ENV["APP_NAME"] || "hello_world"
+APP_NAME=ENV["APP_NAME"] || "eso-research"
 APP_BIN_FILE="#{APP_ROOT}/bin/#{APP_NAME}"
 MRUBY_ROOT=ENV["MRUBY_ROOT"] || "#{APP_ROOT}/mruby"
 MRUBY_CONFIG=File.expand_path(ENV["MRUBY_CONFIG"] || "build_config.rb")
