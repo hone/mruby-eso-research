@@ -9,4 +9,5 @@ MRuby::Gem::Specification.new('eso-research') do |spec|
   spec.add_dependency 'mruby-io', :mgem => 'mruby-io'
   spec.add_dependency 'mruby-array-ext', :core => 'mruby-array-ext'
   spec.add_dependency 'mruby-enumerator', :core => 'mruby-enumerator'
+  spec.add_dependency 'mruby-mtest', :mgem => 'mruby-mtest'
 end
