@@ -39,6 +39,10 @@ STRING
       end
     end
 
+    def position
+      predefined_traits.index(name)
+    end
+
     private
     def predefined_traits
       raise NotImplementedError

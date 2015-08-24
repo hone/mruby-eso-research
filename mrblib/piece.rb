@@ -36,6 +36,8 @@ module ESOResearch
             trait["item"],
             self
           )
+        end.sort do |a, b|
+          a.position <=> b.position
         end
       else
         []
