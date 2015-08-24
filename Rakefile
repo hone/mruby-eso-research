@@ -1,88 +1,67 @@
-APP_ROOT=ENV["APP_ROOT"] || Dir.pwd
-APP_NAME=ENV["APP_NAME"] || "eso-research"
-APP_BIN_FILE="#{APP_ROOT}/bin/#{APP_NAME}"
-MRUBY_ROOT=ENV["MRUBY_ROOT"] || "#{APP_ROOT}/mruby"
-MRUBY_CONFIG=File.expand_path(ENV["MRUBY_CONFIG"] || "build_config.rb")
-INSTALL_PREFIX=ENV["INSTALL_PREFIX"] || "#{APP_ROOT}/build"
-MRUBY_VERSION=ENV["MRUBY_VERSION"] || "1.1.0"
-
-def uid
-  @uid ||= `id -u`.chomp
-end
-
-def gid
-  @gid ||= `id -g`.chomp
-end
-
-file "Dockerfile" do
-  File.open('Dockerfile', 'w') do |file|
-    file.puts <<DOCKERFILE
-FROM hone/mruby-cli
-
-# setup user account based off host uid/gid
-RUN groupadd -g #{gid} -r mruby && useradd -u #{uid} -g mruby mruby
-USER mruby
-DOCKERFILE
-  end
-end
-
-file 'docker-compose.yml' do
-  File.open('docker-compose.yml', 'w') do |file|
-    file.puts <<DOCKER_COMPOSE_YML
-compile: &defaults
-  build: .
-  volumes:
-    - .:/home/mruby/code:rw
-  command: rake compile
-  user: #{uid}
-clean:
-  <<: *defaults
-  command: rake clean
-shell:
-  <<: *defaults
-  command: bash
-DOCKER_COMPOSE_YML
-  end
-end
-
-desc "Setup Docker for building things locally"
-task :setup => ["Dockerfile", "docker-compose.yml"] do
-  sh "docker-compose build"
-end
-
 file :mruby do
-  sh "git clone https://github.com/mruby/mruby"
+  sh "git clone --depth=1 https://github.com/mruby/mruby"
 end
+
+APP_NAME=ENV["APP_NAME"] || "eso-research"
+APP_ROOT=ENV["APP_ROOT"] || Dir.pwd
+# avoid redefining constants in mruby Rakefile
+mruby_root=File.expand_path(ENV["MRUBY_ROOT"] || "#{APP_ROOT}/mruby")
+mruby_config=File.expand_path(ENV["MRUBY_CONFIG"] || "build_config.rb")
+ENV['MRUBY_ROOT'] = mruby_root
+ENV['MRUBY_CONFIG'] = mruby_config
+Rake::Task[:mruby].invoke unless Dir.exist?(mruby_root)
+Dir.chdir(mruby_root)
+load "#{mruby_root}/Rakefile"
 
 desc "compile binary"
-task :compile => :mruby do
-  sh "cd #{MRUBY_ROOT} && MRUBY_CONFIG=#{MRUBY_CONFIG} rake all"
+task :compile => [:all] do
+  %W(#{mruby_root}/build/x86_64-pc-linux-gnu/bin/#{APP_NAME} #{mruby_root}/build/i686-pc-linux-gnu/#{APP_NAME}").each do |bin|
+    sh "strip --strip-unneeded #{bin}" if File.exist?(bin)
+  end
 end
 
 namespace :test do
-  desc "run mruby tests"
-  task :mrbtest => :mruby do
-    sh "cd #{MRUBY_ROOT} && MRUBY_CONFIG=#{MRUBY_CONFIG} rake all test"
+  desc "run mruby & unit tests"
+  # only build mtest for host
+  task :mtest => [:compile] + MRuby.targets.values.map {|t| t.build_mrbtest_lib_only? ? nil : t.exefile("#{t.build_dir}/test/mrbtest") }.compact do
+    # mruby-io tests expect to be in mruby_root
+    # in order to get mruby/test/t/synatx.rb __FILE__ to pass,
+    # we need to make sure the tests are built relative from mruby_root
+    load "#{mruby_root}/test/mrbtest.rake"
+    MRuby.each_target do |target|
+      # only run unit tests here
+      target.enable_bintest = false
+      run_test unless build_mrbtest_lib_only?
+    end
   end
 
-  desc "run app tests"
-  task :app => :compile do
-    sh "cd #{MRUBY_ROOT} && ruby #{MRUBY_ROOT}/test/bintest.rb #{APP_ROOT}"
+  def clean_env(envs)
+    old_env = {}
+    envs.each do |key|
+      old_env[key] = ENV[key]
+      ENV[key] = nil
+    end
+    yield
+    envs.each do |key|
+      ENV[key] = old_env[key]
+    end
+  end
+
+  desc "run integration tests"
+  task :bintest => :compile do
+    MRuby.each_target do |target|
+      clean_env(%w(MRUBY_ROOT MRUBY_CONFIG)) do
+        run_bintest if bintest_enabled?
+      end
+    end
   end
 end
 
 desc "run all tests"
-task :test => ["test:mrbtest", "test:app"]
-
-desc "install"
-task :install => :compile do
-  sh "mkdir -p #{INSTALL_PREFIX}/bin"
-  sh "cp -p #{MRUBY_ROOT}/bin/#{APP_NAME} #{INSTALL_PREFIX}/bin/."
-end
+Rake::Task['test'].clear
+task :test => ["test:mtest", "test:bintest"]
 
 desc "cleanup"
 task :clean do
-  sh "cd #{MRUBY_ROOT} && rake deep_clean"
+  sh "rake deep_clean"
 end
-
-task :default => :test
